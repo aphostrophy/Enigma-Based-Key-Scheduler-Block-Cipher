@@ -8,7 +8,7 @@ class BlockCipher():
     def encrypt(self, plaintext: bytes) -> bytes:
         # Make sure plaintext is a multiple of 16 bytes (128 bits)
         if len(plaintext) % 16 != 0:
-            padding = b'\00' * (16 - len(plaintext) % 16)
+            padding = b'\x00' * (16 - len(plaintext) % 16)
             plaintext = plaintext + padding
 
     def decrypt(self, ciphertext: bytes) -> bytes:
