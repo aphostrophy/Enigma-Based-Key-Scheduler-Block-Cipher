@@ -52,3 +52,9 @@ print(reflector)
 # Verify commutative property
 print(reflector[b'0'])
 print(reflector[b'd'])
+
+print(reflector[b'\x00'])
+print(reflector[b'F'])
+
+for i in range(256):
+    assert(reflector[reflector[bytes([i])]] == bytes([i]))
