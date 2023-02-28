@@ -14,6 +14,8 @@ def scramble_wiring(wiring):
     return scrambled_bytes
 
 scrambled_wiring = scramble_wiring([bytes([i]) for i in rotor_wiring])
+print("scrambled wiring")
+print("================")
 print(scrambled_wiring)
 print(len(set(scrambled_wiring)))
 
@@ -23,6 +25,8 @@ inverse_wiring = bytearray(len(wiring))
 for i in range(len(wiring)):
     inverse_wiring[ord(wiring[i]) - 65] = i + 65
 inverse_wiring = bytes(inverse_wiring)
+print("Alphabet inverse wiring")
+print("============")
 print(inverse_wiring)
 
 def get_inverse_wiring_bytes(wiring: bytes) -> bytes:
@@ -31,7 +35,11 @@ def get_inverse_wiring_bytes(wiring: bytes) -> bytes:
         inverse_wiring[byte] = i
     return bytes(inverse_wiring)
 
-print(get_inverse_wiring_bytes(rotor_wiring))
+inverse_wiring_bytes = get_inverse_wiring_bytes(scrambled_wiring)
+
+print("inverse wiring bytes")
+print("=================")
+print(inverse_wiring_bytes)
 
 def generate_reflector():
     reflector = dict()

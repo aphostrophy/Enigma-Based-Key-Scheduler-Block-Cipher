@@ -151,20 +151,25 @@ class EnigmaMachine:
         for letter in message:
             self._advance_rotors()
             letter = self._plugboard_substitution(letter)
+            print("initial plugboard", letter)
             letter = self._forward_substitution(letter)
+            print("forward sub", letter)
             letter = self._reflector_substitution(letter)
+            print("reflector sub", letter)
             letter = self._backward_substitution(letter)
+            print("backward sub", letter)
             letter = self._plugboard_substitution(letter)
+            print("final plugboard", letter)
             cipher_text += letter
+            print("============")
         return cipher_text
 
 encryptor = EnigmaMachine(rotors=[EnigmaRotor.III, EnigmaRotor.IV, EnigmaRotor.II], 
-                          positions=[24,9,3], rings=[1,3,6], plugboard={"b":"h", "h":"b"})
-cipher = encryptor.encrypt("HELLOMYNAMEISENIGMAIMONEWELLKNOWNFORTHEVITALROLEIPLAYEDDURI \
-                           NGWWIIALANTURINGANDHISATTEMPTSTOCRACKTHEENIGMAMACHINECODECHANGEDHISTORY")
+                          positions=[24,9,3], rings=[1,3,6], plugboard={})
+cipher = encryptor.encrypt("H")
 
 decryptor = EnigmaMachine(rotors=[EnigmaRotor.III, EnigmaRotor.IV, EnigmaRotor.II],
-                           positions=[24,9,3], rings=[1,3,6],  plugboard={"b":"h", "h":"b"})
+                           positions=[24,9,3], rings=[1,3,6],  plugboard={})
 plaintext = decryptor.encrypt(cipher)
 print(cipher)
 print(plaintext)
