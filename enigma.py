@@ -138,13 +138,14 @@ class EnigmaMachine:
         return letter
 
     def _advance_rotors(self):
-        if chr(self.rotor_positions[1]  + ord('A')) == EnigmaRotor.get_turnover_notch(self.rotors[1]):
-            self.rotor_positions[1] = (self.rotor_positions[1] + 1) % 26
-            self.rotor_positions[0] = (self.rotor_positions[0] + 1) % 26
-        if chr(self.rotor_positions[2]  + ord('A')) == EnigmaRotor.get_turnover_notch(self.rotors[2]):
-            self.rotor_positions[1] = (self.rotor_positions[1] + 1) % 26
+        # if chr(self.rotor_positions[1]  + ord('A')) == EnigmaRotor.get_turnover_notch(self.rotors[1]):
+        #     self.rotor_positions[1] = (self.rotor_positions[1] + 1) % 26
+        #     self.rotor_positions[0] = (self.rotor_positions[0] + 1) % 26
+        # if chr(self.rotor_positions[2]  + ord('A')) == EnigmaRotor.get_turnover_notch(self.rotors[2]):
+        #     self.rotor_positions[1] = (self.rotor_positions[1] + 1) % 26
 
-        self.rotor_positions[2] = (self.rotor_positions[2] + 1) % 26
+        # self.rotor_positions[2] = (self.rotor_positions[2] + 1) % 26
+        pass
 
     def encrypt(self, message: str) -> str:
         cipher_text = ""
@@ -154,8 +155,8 @@ class EnigmaMachine:
             print("initial plugboard", letter)
             letter = self._forward_substitution(letter)
             print("forward sub", letter)
-            letter = self._reflector_substitution(letter)
-            print("reflector sub", letter)
+            # letter = self._reflector_substitution(letter)
+            # print("reflector sub", letter)
             letter = self._backward_substitution(letter)
             print("backward sub", letter)
             letter = self._plugboard_substitution(letter)
@@ -164,12 +165,15 @@ class EnigmaMachine:
             print("============")
         return cipher_text
 
-encryptor = EnigmaMachine(rotors=[EnigmaRotor.III, EnigmaRotor.IV, EnigmaRotor.II], 
-                          positions=[24,9,3], rings=[1,3,6], plugboard={})
+encryptor = EnigmaMachine(rotors=[EnigmaRotor.I], 
+                          positions=[0,0,0], rings=[0,0,0], plugboard={})
 cipher = encryptor.encrypt("H")
 
-decryptor = EnigmaMachine(rotors=[EnigmaRotor.III, EnigmaRotor.IV, EnigmaRotor.II],
-                           positions=[24,9,3], rings=[1,3,6],  plugboard={})
+decryptor = EnigmaMachine(rotors=[EnigmaRotor.I],
+                           positions=[0,0,0], rings=[0,0,0],  plugboard={})
 plaintext = decryptor.encrypt(cipher)
 print(cipher)
 print(plaintext)
+
+print(EnigmaRotor.get_wiring(EnigmaRotor.I)[ord('H') - ord('A')])
+print(EnigmaRotor.get_inverse_wiring(EnigmaRotor.I)[ord('Q') - ord('A')])

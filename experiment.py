@@ -31,8 +31,15 @@ print(inverse_wiring)
 
 def get_inverse_wiring_bytes(wiring: bytes) -> bytes:
     inverse_wiring = bytearray(len(wiring))
-    for i, byte in enumerate(wiring):
-        inverse_wiring[byte] = i
+    # for i, byte in enumerate(wiring):
+    #     inverse_wiring[byte] = i
+    for i in range(len(wiring)):
+        inverse_wiring[wiring[i]] = i
+
+    for i in range(len(wiring)):
+        if(inverse_wiring[wiring[i]] != i):
+            print("False")
+
     return bytes(inverse_wiring)
 
 inverse_wiring_bytes = get_inverse_wiring_bytes(scrambled_wiring)
@@ -66,3 +73,5 @@ print(reflector[b'F'])
 
 for i in range(256):
     assert(reflector[reflector[bytes([i])]] == bytes([i]))
+
+print(scrambled_wiring[36])
