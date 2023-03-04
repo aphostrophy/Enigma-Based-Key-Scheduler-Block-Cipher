@@ -9,6 +9,8 @@ if __name__ == "__main__":
     print('ciphertext', ciphertext)
     print(len(ciphertext))
 
+    print("=============================")
+
     cipher = BlockCipher(key = key)
     decrypted_plaintext = cipher.decrypt(ciphertext)
     print('result', decrypted_plaintext)

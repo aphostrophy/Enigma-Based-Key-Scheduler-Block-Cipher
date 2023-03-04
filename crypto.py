@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 from enigma_bytes import EnigmaBytesMachine, EnigmaBytesRotor
 class BlockCipher():
     def __init__(self, key: bytes):
@@ -28,10 +28,56 @@ class BlockCipher():
         )
         return encryptor
     
+    def bits(l: bytes):
+        for n in l:
+            while n:
+                b = n & (~n+1)
+                yield b
+                n ^= b
+    
+    def apply_pbox(self, input_bytes: bytes, pbox: List[int]) -> bytes:
+        # Create an empty byte string to hold the output data
+        output_bytes = bytearray()
+
+        for i in range(len(pbox)):
+            # Compute the byte and bit index of the input data
+            byte_idx = pbox[i] // 8
+            bit_idx = pbox[i] % 8
+
+            # Extract the value of the input bit at the computed index
+            bit_val = (input_bytes[byte_idx] >> (7 - bit_idx)) & 0x01
+
+            # If the current output byte is full, add a new byte to the output string
+            if i % 8 == 0:
+                output_bytes.append(0x00)
+
+            # Append the current bit value to the current output byte
+            output_bytes[-1] |= bit_val << (7 - (i % 8))
+
+        return bytes(output_bytes)
+    
+    def expansion(self, data: bytes) -> bytes:
+        pbox = [
+            0, 1, 2, 3, 4, 5, 6, 7, 32, 33, 34, 35, 36, 37, 38, 39, 
+            8, 9, 10, 11, 12, 13, 14, 15, 40, 41, 42, 43, 44, 45, 46, 47, 
+            16, 17, 18, 19, 20, 21, 22, 23, 48, 49, 50, 51, 52, 53, 54, 55, 
+            24, 25, 26, 27, 28, 29, 30, 31, 56, 57, 58, 59, 60, 61, 62, 63, 
+            0, 1, 2, 3, 4, 5, 6, 7, 32, 33, 34, 35, 36, 37, 38, 39, 
+            8, 9, 10, 11, 12, 13, 14, 15, 40, 41, 42, 43, 44, 45, 46, 47, 
+            16, 17, 18, 19, 20, 21, 22, 23, 48, 49, 50, 51, 52, 53, 54, 55, 
+            24, 25, 26, 27, 28, 29, 30, 31, 56, 57, 58, 59, 60, 61, 62, 63
+        ]
+        return self.apply_pbox(data, pbox)
+    
     # TODO
     def round_function(self, data: bytes, subkey: bytes) -> bytes:
-        assert(len(data) == len(subkey[:8]))
-        return subkey[:8]
+        expansion_result = self.expansion(data)
+        assert(len(expansion_result) == len(subkey))
+        a = bytes(
+            x ^ y 
+            for x, y in zip(expansion_result, subkey)
+        )
+        return a
     
     def feistel_network_for_encrypt(self, left: bytes, right: bytes, subkey: bytes) -> Tuple[bytes, bytes]:
         new_left = right
@@ -69,7 +115,7 @@ class BlockCipher():
             right = plaintext[index + 8: index + 16]
 
             subkey = self.key
-            for i in range(2):
+            for i in range(16):
                 if i < len(key_schedules):
                     key_schedule = key_schedules[i]
                 else:
@@ -99,7 +145,7 @@ class BlockCipher():
 
             subkeys = []
             subkey = self.key
-            for i in range(2):
+            for i in range(16):
                 if i < len(key_schedules):
                     key_schedule = key_schedules[i]
                 else:
@@ -109,7 +155,7 @@ class BlockCipher():
                 subkey = key_schedule.encrypt(subkey)
                 subkeys.append(subkey)
 
-            for i in reversed(range(2)):
+            for i in reversed(range(16)):
                 left, right = self.feistel_network_for_decrypt(left, right, subkeys[i])
             
             result.extend(left + right)
