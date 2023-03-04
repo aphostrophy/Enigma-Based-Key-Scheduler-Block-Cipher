@@ -7,7 +7,7 @@ class BlockCipher():
 
         self.key = key
 
-    def key_schedule(self, key: bytes, shift: int) -> bytes:
+    def build_key_schedule(self, key: bytes, shift: int) -> EnigmaBytesMachine:
         c_start = key[:8]
         d_start = key[8:]
 
@@ -26,16 +26,28 @@ class BlockCipher():
             rings=rings, 
             plugboard={}
         )
-        return encryptor.encrypt(key)
+        return encryptor
     
-    def round_function(self, left: bytes, subkey: bytes) -> bytes:
-        pass
+    # TODO
+    def round_function(self, data: bytes, subkey: bytes) -> bytes:
+        assert(len(data) == len(subkey[:8]))
+        return subkey[:8]
     
-    def feistel_network(self, left: bytes, right: bytes, subkey: bytes) -> Tuple[bytes, bytes]:
+    def feistel_network_for_encrypt(self, left: bytes, right: bytes, subkey: bytes) -> Tuple[bytes, bytes]:
         new_left = right
-        new_right = bytes(x ^ y for x, y in zip(left, subkey))
+        new_right = bytes(
+            x ^ y 
+            for x, y in zip(left, self.round_function(right, subkey))
+        )
         return new_left, new_right
-
+    
+    def feistel_network_for_decrypt(self, left: bytes, right: bytes, subkey: bytes) -> Tuple[bytes, bytes]:
+        new_right = left
+        new_left = bytes(
+            x ^ y 
+            for x, y in zip(right, self.round_function(left, subkey))
+        )
+        return new_left, new_right
 
     def encrypt(self, plaintext: bytes) -> bytes:
         # Make sure plaintext is a multiple of 16 bytes (128 bits)
@@ -45,33 +57,61 @@ class BlockCipher():
 
         shifts = [1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1]
 
-        block_size = len(plaintext)
-        
-        left = plaintext[:block_size // 2]
-        right = plaintext[block_size // 2:]
+        block_counts = len(plaintext) // 16
 
-        subkey = self.key
-        for i in range(16):
-            subkey = self.key_schedule(subkey, shifts[i])
-            left, right = self.feistel_network(left, right, subkey)
+        result = bytearray()
+        key_schedules = []
 
-        return left + right
+        for block in range(block_counts):
+            index = block * 16
+
+            left = plaintext[index : index + 8]
+            right = plaintext[index + 8: index + 16]
+
+            subkey = self.key
+            for i in range(2):
+                if i < len(key_schedules):
+                    key_schedule = key_schedules[i]
+                else:
+                    key_schedule =  self.build_key_schedule(subkey, shifts[i])
+                    key_schedules.append(key_schedule)
+
+                subkey = key_schedule.encrypt(subkey)
+                left, right = self.feistel_network_for_encrypt(left, right, subkey)
+            
+            result.extend(left + right)
+
+        return bytes(result)
 
     def decrypt(self, ciphertext: bytes) -> bytes:
         shifts = [1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1]
 
-        block_size = len(ciphertext)
-        
-        left = ciphertext[:block_size // 2]
-        right = ciphertext[block_size // 2:]
+        block_counts = len(ciphertext) // 16
 
-        subkeys = []
-        subkey = self.key
-        for i in range(16):
-            subkeys.append(subkey)
-            subkey = self.key_schedule(subkey, shifts[i])
+        result = bytearray()
+        key_schedules = []
 
-        for i in reversed(range(16)):
-            left, right = self.feistel_network(left, right, subkeys[i])
+        for block in range(block_counts):
+            index = block * 16
 
-        return left + right
+            left = ciphertext[index : index + 8]
+            right = ciphertext[index + 8: index + 16]
+
+            subkeys = []
+            subkey = self.key
+            for i in range(2):
+                if i < len(key_schedules):
+                    key_schedule = key_schedules[i]
+                else:
+                    key_schedule = self.build_key_schedule(subkey, shifts[i])
+                    key_schedules.append(key_schedule)
+
+                subkey = key_schedule.encrypt(subkey)
+                subkeys.append(subkey)
+
+            for i in reversed(range(2)):
+                left, right = self.feistel_network_for_decrypt(left, right, subkeys[i])
+            
+            result.extend(left + right)
+
+        return bytes(result)
