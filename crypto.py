@@ -1,6 +1,12 @@
 from typing import List, Tuple
 from enigma_bytes import EnigmaBytesMachine, EnigmaBytesRotor
+
+def byte_xor(ba1, ba2):
+    return bytes([a ^ b for a, b in zip(ba1, ba2)])
+
 class BlockCipher():
+    IV= b'\x00' * 16
+
     def __init__(self, key: bytes):
         if len(key) != 16:
             raise ValueError('key length must be of size 16 bytes')
@@ -28,7 +34,7 @@ class BlockCipher():
         )
         return encryptor
     
-    def bits(l: bytes):
+    def bits(self, l: bytes):
         for n in l:
             while n:
                 b = n & (~n+1)
@@ -158,6 +164,12 @@ class BlockCipher():
 
             left = plaintext[index : index + 8]
             right = plaintext[index + 8: index + 16]
+            block_plaintext = left + right
+            if len(result) == 0:
+                block_plaintext = byte_xor(block_plaintext, self.IV)
+            else:
+                block_plaintext = byte_xor(block_plaintext, result[(block-1)*16:block*16])
+            left, right = block_plaintext[0:8], block_plaintext[8:16]
 
             subkey = self.key
             for i in range(16):
@@ -182,6 +194,8 @@ class BlockCipher():
         result = bytearray()
         key_schedules = []
 
+        prevs = []
+
         for block in range(block_counts):
             index = block * 16
 
@@ -200,9 +214,13 @@ class BlockCipher():
                 subkey = key_schedule.encrypt(subkey)
                 subkeys.append(subkey)
 
+            prevs.append(left + right)
             for i in reversed(range(16)):
                 left, right = self.feistel_network_for_decrypt(left, right, subkeys[i])
             
-            result.extend(left + right)
+            if len(result) == 0:
+                result.extend(byte_xor(left + right, bytes([self.IV]) if isinstance(self.IV, int) else self.IV))
+            else:
+                result.extend(byte_xor(left + right, prevs[block-1]))
 
         return bytes(result)
